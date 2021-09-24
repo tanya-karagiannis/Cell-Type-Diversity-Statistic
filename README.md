@@ -14,7 +14,7 @@ install.pacakges("reshape2"))
 ```
 ## Usage
 First run the source code from distribution_score.R to load the CTDS.score function into R.
-in R:
+
 ```
 source("~/CTDS/R/distribution_score.R")
 ```
