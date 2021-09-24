@@ -3,70 +3,55 @@ title: 'Cell Type Distribution Score: A method to measure the overall cell type 
   of samples at a single cell level'
 author: "Tanya Karagiannis, Stefano Monti, Paola Sebastiani"
 output:
-  html_document: default
-  pdf_document: default
+  html_document:
+    theme: united
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapse: false
 ---
-
-```{r, include=FALSE, messages=FALSE, warnings=FALSE}
-library(dplyr)
-library(ggplot2)
-library(Seurat)
-library(SingleCellExperiment)
-library(reshape2)
-```
-
 
 # Introduction
 
 The Cell Type Distribution Score is an entropy-based score to measure and assess the overall cell type composition across samples from single cell transcriptomic datasets.
 
-# Run source code for Installation
-
-Install the CTDS function by cloning the github repository on the command line and running the source code in R.
+Install the CTDS.score function by cloning the github repository and load the function in R.
 
 ```{r}
-CTDS.Score <- source(file = "~/CTDS/R/distribution_score.R")
+source('~/CTDS/R/distribution_score.R')
+
 ```
 
 
 # Usage
 
-Load single cell RNA-seq dataset of PBMCs from aging and extreme longevity individuals
-Integrate them into one Seurat object
+We demonstrate the implementation of this method on cell type composition level data from three single cell RNA-seq datasets of aging and longevity. In this example, we apply the cell type distribution score on the normalized cell type proportions per sample and compare differences in distribution score between four age groups across the human lifespan to assess overall cell type composition in aging and extreme longevity.
+
+
+
+Load libraries
+```{r, include=TRUE, messages=FALSE, warnings=FALSE}
+suppressMessages(c(library(dplyr),
+                   library(ggplot2),
+                   library(Seurat),
+                   library(SingleCellExperiment),
+                   library(reshape2)))
+```
+
+Load integrated single cell RNA-seq datasets of PBMCs from aging and extreme longevity individuals
+
 ```{r}
-pbmc.combined <- readRDS(file = "C:/Users/tkaragiannis/Desktop/pbmc.combined.rds")
+pbmc.combined <- readRDS(file = "~/Data/pbmc.combined.rds")
 
 ```
 
-
-```{r, eval = FALSE, echo = FALSE}
-#pbmc.public <- readRDS(file = "~/Data/pbmc.rds")
-#pbmc.necs <- readRDS("~/Data/pbmc.GMcohort.combined.rds")
-
-#pbmc.combined <- merge(pbmc.public, pbmc.necs, project = "PBMC.3data")
-
-#remove two other datasets
-#rm(pbmc.public)
-#rm(pbmc.necs)
-```
-
-```{r, echo = F}
-#select only immune cell types
-Idents(pbmc.combined) <- "ct.consensus"
-pbmc.combined <- subset(pbmc.combined, idents = c("MGK", "EC", "MKI"), invert = T)
-
-#Combined CD4 T Memory and Naive to CD4 T NonCytotoxic
-CD4.Mem <- WhichCells(pbmc.combined, idents = "CD4 T Memory")
-CD4.Naive <- WhichCells(pbmc.combined, idents = "CD4 T Naive")
-Idents(pbmc.combined, cells = c(CD4.Mem, CD4.Naive)) <- "CD4 T NonCytotoxic"
-pbmc.combined$ct.consensus <- Idents(pbmc.combined)
-```
+## Creating matrix of normalized cell type proportions
 
 Create table of normalized cell type proportions per sample (samples v. cell types) from Seurat object.
 ```{r}
 ct_prop <- prop.table(table(pbmc.combined@meta.data$sample.ID, pbmc.combined@meta.data$ct.consensus), margin = 1)
 
-ct_prop
+head(ct_prop)
 # require(knitr)
 # require(kableExtra)
 # kable(ct_prop, caption = paste0("cell type proportions per sample"),"html") %>% kable_styling("striped") %>% scroll_box(width = "100%",height = "300px")
@@ -83,6 +68,7 @@ metadat <- lapply(1:nrow(ct_prop),function(x){
 
 metadat <- do.call(rbind, metadat)
 
+head(metadat)
 ```
   
   
@@ -110,24 +96,28 @@ for (x in 1:length(age.groups)){
 
 ```
 
-Calculate cell type distribution score for each sample and compare between age groups across the human lifespan
+## Calculate cell type distribution score for each sample 
 
+### Matrix, Table Implementaion
 - Run CTDS function with matrix or table of normalized cell type proportions per sample and calculate the cell type distribution score per sample.
 ```{r}
 
 div.res <- CTDS.score(as.matrix(ct_prop), metadata = metadat)
 
-div.res
+head(div.res)
 ```
 
 
+### SingleCellExperiment Object, Seurat Object Implementation
 - Run CTDS function with Seurat/SingleCellExperiment Object to calulate normalized cell type proportions per sample and calulate the cell type distribution score per sample.
 ```{r}
 div.res <- CTDS.score(pbmc.combined, sample = "sample.ID", cell.type = "ct.consensus", metadata = metadat)
 
-div.res
+head(div.res)
 ```
 
+
+### Visualization and statistical tests of cell type distribution scores 
 
 Visualizations and statistical tests to compare cell type distribution scores between four age groups across the human lifespan: Younger (20-39), Middle Age (40-59), Older Age (60-89), and Extreme Longevity (100-119).
 
@@ -137,48 +127,6 @@ plot.ctds <- ggplot(div.res, aes(age.quartiles, score)) + geom_boxplot(aes(fill 
 
 plot.ctds
 
-```
-```{r, eval = F, echo = F}
-#Boxplots of cell type diversity of samples grouped by age group and shaped/colored by relationship
-require(viridis)
-require(ggsci)
-div.res$relation <- factor(div.res$relation, levels = c("unrelated", "offspring", "centenarian", "supercentenarian"))
-p6 <- ggplot(div.res, aes(age, entropy)) + geom_boxplot(aes(fill = age), outlier.shape = NA) + geom_point(aes(shape = relation,color = relation), size=3) + theme_bw(base_size = 20) + theme(axis.line=element_line()) + ylim(0.8, 2.5) + scale_color_viridis(discrete = TRUE, option = "D") + scale_fill_npg() +  scale_shape(solid = FALSE)
-p6
-
-sp <- ggplot(div.res[div.res$age == "60-89",], aes(relation, entropy)) + geom_point()
-
-#Boxplots of cell type diversity of samples grouped by age group and shaped/colored by sex
-div.res$sex <- factor(div.res$sex, levels = c("Male", "Female"))
-p6 <- ggplot(div.res, aes(age, entropy)) + geom_boxplot(aes(fill = sex),
-  position = position_dodge(0.9) ) +
-  theme(axis.line=element_line()) + ylim(0.8, 2.5) + facet_wrap(~age, scale = "free") + theme_bw(base_size = 20)+
-  stat_compare_means(aes(group = sex), label = "p.signif", method = "t.test") + scale_fill_manual(values = c("#00AFBB", "#E7B800"))
-  
-p6
-
-p7 <- ggplot(div.res, aes(age, entropy)) + 
-  #geom_boxplot(
-  #aes(color = sex), width = 0.5, size = 0.4,
-  #position = position_dodge(0.8)
-  #) +
-  geom_point(
-    aes(fill = sex, color = sex), trim = FALSE,
-    binaxis='y', stackdir='center', dotsize = 0.8,
-    position = position_dodge(0.8)
-  )+
-  #geom_point(aes(color = sex))+
-  #geom_line(aes(color = sex))+
-  theme_bw(base_size = 20)+
-  scale_fill_manual(values = c("#00AFBB", "#E7B800"))+
-  scale_color_manual(values = c("#00AFBB", "#E7B800")) +
-  geom_smooth(method='lm', aes(group = sex, color = sex))+ 
-  facet_wrap(~ sex)
-p7
-
-
-
-sp <- ggplot(div.res[div.res$age == "60-89",], aes(relation, entropy)) + geom_point()
 ```
 
 Statistical tests
