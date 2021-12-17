@@ -1,12 +1,14 @@
-#' Calculate Cell Type Distribution Score
+#' Calculate Cell Type Diversity Statistic
 #'
-#' This function calculates the cell type distribution score for each sample 
+#' This function calculates the cell type diversity statistic for each sample 
 #' from a matrix with samples specified in rows and cell types specified in 
-#' the columns. If the column sums of the matrix do not equal to 1, the function 
-#' will return a warning message to fix the matrix.
+#' the columns. The matrix can be given as an input or generated from a Seurat object 
+#' or SingleCellExperiment object. If the column sums of the matrix do not equal to 1, 
+#' the function will return a warning message to fix the matrix.
 #' 
 #'
-#' @param normprop A matrix of the normalized cell type proportions with samples by row and cell types by column or SingleCellExperiment Object or Seurat Object to pull data from.
+#' @param normprop A matrix of the normalized cell type proportions with samples by row and 
+#' cell types by column, or SingleCellExperiment Object or Seurat Object to pull data from.
 #' @param metadata A matrix of the metadata information with samples by row and metadata variables by column
 #' @return A vector of cell type distribution scores for each sample with metadata information if given
 #' @export
