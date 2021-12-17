@@ -1,5 +1,5 @@
 # Cell Type Diversity Statistic
-Cell Type Diversity Statistic: A novel metric of the overall cell type composition
+Cell Type Diversity Statistic: An entropy-based metric to compare overall cell type composition across samples
 
 ## Dependencies
 * Before running the CTDS.score function, make sure that R is installed.
@@ -13,10 +13,10 @@ install.packages("ggplot2")
 install.pacakges("reshape2"))
 ```
 ## Usage
-First run the source code from distribution_score.R to load the CTDS.score function into R.
+First run the source code from diversity_score.R to load the CTDS.score function into R.
 
 ```
-source("~/CTDS/R/distribution_score.R")
+source("~/CTDS/R/diversity_score.R")
 ```
 
 To run CTDS.score on a matrix or table of normalized cell type proportions (samples in rows v. cell types in columns), input the dataobject to return a vector of the cell type diversity statistics across samples. 
