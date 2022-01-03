@@ -1,6 +1,5 @@
 ---
-title: 'Cell Type Diversity Statistic: A method to measure the overall cell type composition
-  of samples at a single cell level'
+title: 'Cell Type Diversity Statistic: An entropy-based metric to compare overall cell type composition across samples'
 author: "Tanya Karagiannis, Stefano Monti, Paola Sebastiani"
 output:
   html_document:
