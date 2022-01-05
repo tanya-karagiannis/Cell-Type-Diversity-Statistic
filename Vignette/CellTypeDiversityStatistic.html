@@ -5822,28 +5822,10 @@ plot.ctds</code></pre>
 </ul>
 <pre class="r"><code>#anova to test if there is a significant difference in at least one age group
 lm.model &lt;- lm(score ~ age.quartiles, data = div.res)
-anova(lm.model)</code></pre>
-<pre><code>## Analysis of Variance Table
-## 
-## Response: score
-##               Df  Sum Sq Mean Sq F value    Pr(&gt;F)    
-## age.quartiles  3 0.90179 0.30060  7.7016 0.0001875 ***
-## Residuals     62 2.41988 0.03903                      
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
-<pre class="r"><code>#pairwise t-tests for multiple comparisons between the scores of age groups
+anova(lm.model)
+
+#pairwise t-tests for multiple comparisons between the scores of age groups
 pairwise.t.test(div.res$score, div.res$age, p.adjust.method = &quot;BH&quot;)</code></pre>
-<pre><code>## 
-##  Pairwise comparisons using t tests with pooled SD 
-## 
-## data:  div.res$score and div.res$age 
-## 
-##                   Younger Age Middle Age Older Age
-## Middle Age        0.94095     -          -        
-## Older Age         0.64118     0.62310    -        
-## Extreme Longevity 0.00115     0.00016    0.00363  
-## 
-## P value adjustment method: BH</code></pre>
 <ul>
 <li>Anova of cell type diversity statistics between the three younger age groups</li>
 </ul>
@@ -5853,12 +5835,6 @@ div.younger &lt;- div.res %&gt;% dplyr::filter(age.quartiles != &quot;Extreme Lo
 #anova to test if there is a significant difference in at least one age group
 lm.younger &lt;- lm(score ~ age.quartiles, data = div.younger)
 anova(lm.younger)</code></pre>
-<pre><code>## Analysis of Variance Table
-## 
-## Response: score
-##               Df  Sum Sq  Mean Sq F value Pr(&gt;F)
-## age.quartiles  2 0.02796 0.013981  0.4075 0.6675
-## Residuals     49 1.68114 0.034309</code></pre>
 </div>
 </div>
 </div>
