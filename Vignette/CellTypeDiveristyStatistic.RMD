@@ -33,7 +33,8 @@ library(Seurat),
 library(SingleCellExperiment),
 library(knitr),
 library(kableExtra),
-library(patchwork)
+library(patchwork),
+library(broom)
 ))
 ```
 
