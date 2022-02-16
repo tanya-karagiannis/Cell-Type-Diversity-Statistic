@@ -1,0 +1,173 @@
+---
+title: 'Cell Type Diversity Statistic: An entropy-based metric to compare overall cell type composition across samples'
+author: "Tanya Karagiannis, Stefano Monti, Paola Sebastiani"
+output:
+  html_document:
+    theme: paper
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapse: false
+---
+
+# Introduction
+
+The Cell Type Diversity Statistic is an entropy-based score to measure and assess the overall cell type composition across samples from single cell transcriptomic datasets.
+
+Install the CTDS.score function by cloning the github repository and load the function in R.
+```{r, messages=FALSE, warnings=FALSE}
+source('./CTDS/R/CTDS_function.R')
+```
+
+
+# Usage
+
+We demonstrate the implementation of this method on cell type composition level data from three single cell RNA-seq datasets of aging and extreme old age. In this example, we apply the cell type diversity statistic on the cell type proportions per sample and compare differences in cell type diversity statistic between four age groups across the human lifespan to assess overall cell type composition changes in aging and extreme old age.
+
+
+Load libraries
+```{r, messages=FALSE, warnings=FALSE}
+suppressMessages(c(library(tidyverse),
+library(hablar),
+library(Seurat),
+library(SingleCellExperiment),
+library(knitr),
+library(kableExtra),
+library(patchwork)
+))
+```
+
+Load integrated single cell RNA-seq datasets of PBMCs from aging and extreme longevity individuals
+```{r, messages=FALSE, warnings=FALSE}
+pbmc.combined <- readRDS(file = "./Data/pbmc.combined.rds")
+```
+
+
+## Creating matrix of cell type proportions
+
+Create table of cell type proportions per sample (samples v. cell types) from Seurat object.
+```{r,  messages=FALSE, warnings=FALSE}
+ct_prop <- prop.table(table("sample.ID" = pbmc.combined@meta.data$sample.ID,
+                            "cell.type" = pbmc.combined@meta.data$ct.consensus), 
+                            margin = 1) 
+
+kable(ct_prop, caption = paste0("cell type proportions per sample"),"html") %>% kable_styling("striped") %>% scroll_box(width = "100%",height = "300px")
+```
+
+
+Create matrix of metadata information from Seurat object:
+
+- sample ID (sample.ID)
+- age based on the four age groups of the human lifespan (age.quartiles)
+- scRNA-seq dataset of origin (batch)
+```{r, messages=FALSE, warnings=FALSE}
+metadat <- pbmc.combined@meta.data %>% 
+            as_tibble() %>%
+            dplyr::select(sample.ID, age.quartiles, batch) %>%
+            dplyr::distinct()
+
+kable(metadat, caption = paste0("metadata information"),"html") %>% kable_styling("striped") %>% scroll_box(width = "100%",height = "300px")
+```
+
+
+Bind data frames of cell type proportions and metadata information together
+```{r,  messages=FALSE, warnings=FALSE}
+normprop <- ct_prop %>% 
+           tibble::as_data_frame() %>%
+           dplyr::rename("proportion" = n) %>%
+           dplyr::full_join(metadat, by = "sample.ID") %>%
+           hablar::convert(fct(cell.type))
+
+kable(normprop, caption = paste0("cell type proportions with metadata information"),"html") %>% kable_styling("striped") %>% scroll_box(width = "100%",height = "300px")
+```
+
+ 
+ 
+Visualize cell type proportions for all samples grouped by age group.
+```{r,  messages=FALSE, warnings=FALSE,fig.dim = c(30, 20)}
+
+normprop$cell.type <- factor(normprop$cell.type, levels = levels(pbmc.combined@meta.data$ct.consensus))
+
+#generate bar plots
+age.groups <- levels(normprop$age.quartiles)
+
+plot.prop <- lapply(1:length(age.groups), function(x){
+  age.dat <- normprop %>% dplyr::filter(age.quartiles == age.groups[x])
+  
+  require(colorspace)
+  plot.res <- ggplot(age.dat, aes(interaction(sample.ID, age.quartiles), proportion)) + 
+              geom_bar(aes(group = cell.type, fill = cell.type), stat="identity", position = "stack") + 
+              scale_fill_manual(values =  c(colorspace::diverge_hcl(20)[1:8], rev(colorspace::diverge_hcl(20)[16:20]))) +
+              theme_classic(base_size = 30) + 
+                theme(axis.line=element_line()) + 
+                facet_wrap(~ age.quartiles) + 
+              ylab("cell type proportions") +
+              theme(axis.title.x=element_blank(),
+                    axis.text.x=element_blank(),
+                    axis.ticks.x=element_blank())
+  
+ return(plot.res)
+})
+
+#plot bar plots together using patchwork
+require(patchwork)
+plot.prop[[1]] + plot.prop[[2]] + plot.prop[[3]] + plot.prop[[4]] + patchwork::plot_layout(ncol = 2)
+```
+
+
+## Calculate cell type diversity statistic for each sample 
+
+### Matrix, Table Implementaion
+- Run CTDS function with matrix or table of cell type proportions per sample and calculate the cell type diversity statistic per sample.
+```{r,  messages=FALSE, warnings=FALSE}
+div.res <- CTDS.score(as.matrix(ct_prop))
+
+kable(div.res, caption = paste0("cell type diversity statistic"),"html") %>% kable_styling("striped") %>% scroll_box(width = "100%",height = "300px")
+
+#join with sample level metadata information
+div.res <- CTDS.score(as.matrix(ct_prop), metadata = metadat)
+
+kable(div.res, caption = paste0("cell type diversity statistic"),"html") %>% kable_styling("striped") %>% scroll_box(width = "100%",height = "300px")
+```
+
+
+### SingleCellExperiment Object, Seurat Object Implementation
+- Run CTDS function with Seurat/SingleCellExperiment Object to calculate normalized cell type proportions per sample and calculate the cell type diversity statistic per sample.
+```{r,  messages=FALSE, warnings=FALSE}
+div.res <- CTDS.score(pbmc.combined, sample = "sample.ID", cell.type = "ct.consensus", metadata = metadat)
+
+kable(div.res, caption = paste0("cell type diversity statistic"),"html") %>% kable_styling("striped") %>% scroll_box(width = "100%",height = "300px")
+```
+
+
+### Visualization and statistical tests of cell type diversity statistics 
+
+Visualizations and statistical tests to compare cell type diversity statistics between four age groups across the human lifespan: Younger (20-39), Middle Age (40-59), Older Age (60-89), and Extreme Longevity (100-119).
+```{r, fig.dim=c(20,10),  messages=FALSE, warnings=FALSE}
+
+plot.ctds <- ggplot(div.res, aes(age.quartiles, statistic)) + 
+              geom_boxplot(aes(fill = age.quartiles)) + 
+              theme_classic(base_size = 40) + 
+              theme(axis.line=element_line()) + 
+              ylim(-1, 0) +  
+  theme(axis.title.x=element_blank(),
+        legend.position = "none") +
+              ylab("cell type diversity statistic") +
+              ggsignif::geom_signif(
+    y_position = c(0), xmin = c(0.8), xmax = c(4.2),
+    annotation = c("***"), tip_length = 0
+  )
+plot.ctds
+
+```
+
+Statistical tests
+
+- Anova and T-test of cell type diversity statistics between the four age groups
+```{r, fig.dim = c(20, 10),  messages=FALSE, warnings=FALSE}
+#anova to test if there is a significant difference in at least one age group
+lm.model <- lm(statistic ~ age.quartiles, data = div.res)
+anova(lm.model) %>% broom::tidy()
+#pairwise t-tests for multiple comparisons between the scores of age groups
+pairwise.t.test(div.res$statistic, div.res$age.quartiles, p.adjust.method = "BH") %>% broom::tidy()
+```
