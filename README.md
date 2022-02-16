@@ -6,20 +6,21 @@ Cell Type Diversity Statistic: An entropy-based metric to compare overall cell t
 * Install the following R packages if not installed already:
 
 ```
-install.packages("dplyr")
+install.packages("tidyverse")
 install.packages("Seurat")
 install.packages("SingleCellExperiment")
-install.packages("ggplot2")
-install.pacakges("reshape2"))
+install.packages("hablar")
+install.packages("broom")
+install.packages("patchwork")
 ```
 ## Usage
-First run the source code from diversity_score.R to load the CTDS.score function into R.
+First run the source code from CTDS_function.R to load the CTDS.score function into R.
 
 ```
-source("~/CTDS/R/diversity_score.R")
+source("~/CTDS/R/CTDS_function.R")
 ```
 
-To run CTDS.score on a matrix or table of normalized cell type proportions (samples in rows v. cell types in columns), input the dataobject to return a vector of the cell type diversity statistics across samples. 
+To run CTDS.score on a matrix or table of cell type proportions (samples in rows v. cell types in columns), input the dataobject to return a vector of the cell type diversity statistics across samples. 
 
 ```
 CTDS.score(dataobject)
@@ -31,16 +32,16 @@ Optionally include a matrix of metadata information for each sample (metaInfo) t
 CTDS.score(dataobject, metadata = metaInfo)
 ```
 
-CTDS.score can alternatively take a SingleCellExperiment object or Seurat object and calculate the normalized cell type proportions for each sample based on the sample variable (sample.ID) and cell type variable (ct.consensus) specified. Then the function will calculate the cell type diversity statistics across samples.
+CTDS.score can alternatively take a SingleCellExperiment object or Seurat object and calculate the cell type proportions for each sample based on the sample variable (sample.ID) and cell type variable (cell.type) specified. Then the function will calculate the cell type diversity statistics across samples.
 
 To return a vector of the cell type diversity statistics across samples:
 ```
-CTDS.score(dataobject, sample = "sample.ID", cell.type = "ct.consensus")
+CTDS.score(dataobject, sample = "sample.ID", cell.type = "cell.type")
 ```
 
-Including metadata information to return a matrix with the cell type diversity statistics across samples and their metadata information.
+Including metadata information to return a matrix with the cell type diversity statistics across samples joined with their metadata information.
 ```
-CTDS.score(dataobject, sample = "sample.ID", cell.type = "ct.consensus", metadata = metaInfo)
+CTDS.score(dataobject, sample = "sample.ID", cell.type = "cell.type", metadata = metaInfo)
 ```
 
 
