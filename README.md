@@ -1,6 +1,9 @@
 # Cell Type Diversity Statistic
 Cell Type Diversity Statistic: An entropy-based metric to compare overall cell type composition across samples
 
+Citation:
+Karagiannis, T.T, Monti, S, Sebastiani, P (2022). Cell Type Diversity Statistic: An entropy-based metric to compare cell type composition across samples. Front Genet.(Provisionally Accepted).
+
 ## Dependencies
 * Before running the CTDS.score function, make sure that R is installed.
 * Install the following R packages if not installed already:
