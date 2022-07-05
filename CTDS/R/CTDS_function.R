@@ -23,7 +23,7 @@ CTDS.score <- function(dataobj,
                        cell.type = "ct.consensus",
                        metadata = NULL){
   require(tidyverse)
-  if(class(dataobj) == "matrix" | class(dataobj) == "table"){
+  if(class(dataobj) == "matrix" | class(dataobj) == "table" | class(dataobj) == "data.frame"){
     normprop.table <- dataobj
     #return(normprop.table)
   }else if(class(dataobj) == "SingleCellExperiment"){
@@ -38,9 +38,9 @@ CTDS.score <- function(dataobj,
   
   #check if column sums equal to 1
   normprop.sum <- apply(normprop.table, 1, sum)
-  #return(normprop.sum)
-  if(normprop.sum == 1){
-    normprop.table <- normprop.table
+  
+  if(all(normprop.sum) == 1){
+    message("The normalized proportions for each sample add up to 1")
   }else{
     warning("The normalized proportions for each sample do not add up to 1")
   }
